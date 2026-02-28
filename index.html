@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>顔診断 管理画面</title>
+  <style>
+    body { font-family: sans-serif; background:#f5f5f5; }
+    h1 { text-align:center; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill, 200px); gap:16px; }
+    .card {
+      background:#fff;
+      padding:10px;
+      border-radius:8px;
+      box-shadow:0 2px 6px rgba(0,0,0,.1);
+    }
+    img { width:100%; border-radius:6px; }
+    button {
+      margin-top:8px;
+      width:100%;
+      background:#e53935;
+      color:#fff;
+      border:none;
+      padding:6px;
+      border-radius:4px;
+      cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h1>顔診断 管理画面</h1>
+<div class="grid" id="list"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+  import {
+    getFirestore, collection, getDocs, deleteDoc, doc
+  } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+  // 🔴 Firebase設定（自分のに差し替え）
+  const firebaseConfig = {
+    apiKey: "API_KEY",
+    authDomain: "PROJECT_ID.firebaseapp.com",
+    projectId: "PROJECT_ID",
+    storageBucket: "PROJECT_ID.appspot.com",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const list = document.getElementById("list");
+
+  const snapshot = await getDocs(collection(db, "photos"));
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <img src="${data.imageUrl}">
+      <p>魅力度：80点</p>
+      <p>${data.createdAt?.toDate?.().toLocaleString() || ""}</p>
+      <button>削除</button>
+    `;
+
+    card.querySelector("button").onclick = async () => {
+      if(confirm("削除しますか？")){
+        await deleteDoc(doc(db, "photos", docSnap.id));
+        card.remove();
+      }
+    };
+
+    list.appendChild(card);
+  });
+</script>
+
+</body>
+</html>
